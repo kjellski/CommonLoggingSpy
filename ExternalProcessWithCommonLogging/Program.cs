@@ -6,11 +6,14 @@ namespace ExternalProcessWithCommonLogging
 {
     class Program
     {
+        private static readonly ILog Log = LogManager.GetCurrentClassLogger();
+
         static void Main()
         {
+            Log.Debug("Starting application");
             var thread = new Thread(() =>
             {
-                var a = new ALogged();
+                var a = new LoggingClassA();
 
                 try
                 {
@@ -22,12 +25,13 @@ namespace ExternalProcessWithCommonLogging
                         a.AMethodWarn();
                         a.AMethodError();
                         Console.WriteLine("Logged something with Common.Logging.");
-                        Thread.Sleep(1000);
+                        Thread.Sleep(10000);
                     }
                 }
-                catch (ThreadInterruptedException)
+                catch (ThreadInterruptedException ex)
                 {
                     Console.WriteLine("Stopping Debugging Thread.");
+                    Log.Fatal("Intentionally logging exception thrown by interrupted thread", ex);
                 }
                 // ReSharper disable once FunctionNeverReturns
             });
@@ -38,32 +42,9 @@ namespace ExternalProcessWithCommonLogging
 
             thread.Interrupt();
             thread.Join();
+
+            Log.Debug("Sleeping 500ms before closing...");
+            Thread.Sleep(500);
         }
     }
-
-    class ALogged
-    {
-        private ILog _log = LogManager.GetCurrentClassLogger();
-
-        internal void AMethodDebug()
-        {
-            _log.Debug("AMethodDebug()");
-        }
-
-        internal void AMethodInfo()
-        {
-            _log.Info("AMethodInfo()");
-        }
-
-        internal void AMethodWarn()
-        {
-            _log.Warn("AMethodWarn()");
-        }
-
-        internal void AMethodError()
-        {
-            _log.Error("AMethodError()");
-        }
-    }
-
 }
